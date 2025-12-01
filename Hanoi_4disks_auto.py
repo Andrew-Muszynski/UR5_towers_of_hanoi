@@ -469,7 +469,7 @@ class HanoiSolver(Node):
         else:
             self.get_logger().info(f'10. Retreat to T{retreat_tower}F')
         
-        if not self.move_joints(retreat_joints, speed=0.05): #changed from 0.25 to 0.05 for slower speed
+        if not self.move_joints(retreat_joints, speed=0.25): #changed from 0.25 to 0.05 for slower speed
             return False
         time.sleep(0.1)
         
