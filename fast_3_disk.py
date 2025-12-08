@@ -331,8 +331,12 @@ class HanoiSolver(Node):
         self.get_logger().info(f'✓ Gripper {"OPENED" if open_it else "CLOSED"}')
         return True
     
-    def move_disk(self, disk, from_tower, from_level, to_tower):
-        """Move one disk using Cartesian linear motion"""
+    def move_disk(self, disk, from_tower, from_level, to_tower, next_from_tower=None):
+        """Move one disk using Cartesian linear motion
+        
+        Args:
+            next_from_tower: Tower number where next pickup occurs (for smart retreat)
+        """
         
         self.get_logger().info(f'\n{"="*60}')
         self.get_logger().info(f'MOVE: {disk.upper()} T{from_tower} {from_level.upper()} → T{to_tower}')
@@ -343,6 +347,14 @@ class HanoiSolver(Node):
         to_front_joints = getattr(self, f't{to_tower}f')
         pickup_joints = getattr(self, f'{disk}_pickup_t{from_tower}_{from_level}')
         dropoff_joints = getattr(self, f'{disk}_dropoff_t{to_tower}')
+        
+        # Determine retreat target (next pickup tower or current dropoff tower)
+        if next_from_tower is not None:
+            retreat_joints = getattr(self, f't{next_from_tower}f')
+            retreat_label = f'T{next_from_tower}F (next pickup)'
+        else:
+            retreat_joints = to_front_joints
+            retreat_label = f'T{to_tower}F'
         
         # Get TCP positions
         from_front_tcp = getattr(self, f't{from_tower}f_tcp')
@@ -356,16 +368,16 @@ class HanoiSolver(Node):
         
         # === PICKUP SEQUENCE ===
         self.get_logger().info(f'1. Moving to T{from_tower}F')
-        if not self.move_joints(from_front_joints, speed=0.25):  # Faster: 0.15 → 0.25
+        if not self.move_joints(from_front_joints, speed=0.25):
             return False
-        time.sleep(0.1)  # Reduced: 0.2 → 0.1
+        time.sleep(0.1)
         
         self.get_logger().info(f'2. Match Z height: {front_z:.4f}m → {pickup_z:.4f}m')
-        if not self.move_to_xyz(front_x, front_y, pickup_z, speed=0.06):  # Faster: 0.08 → 0.06
+        if not self.move_to_xyz(front_x, front_y, pickup_z, speed=0.06):
             return False
         
         self.get_logger().info(f'3. Move forward to pickup (X,Y only, Z constant)')
-        if not self.move_to_xyz(pickup_x, pickup_y, pickup_z, speed=0.06):  # Faster: 0.08 → 0.06
+        if not self.move_to_xyz(pickup_x, pickup_y, pickup_z, speed=0.06):
             return False
         
         self.get_logger().info(f'4. CLOSE GRIPPER')
@@ -374,16 +386,16 @@ class HanoiSolver(Node):
         
         # === TRANSFER SEQUENCE ===
         self.get_logger().info(f'5. Lift straight up to clearance: Z={dropoff_z:.4f}m')
-        if not self.move_to_xyz(pickup_x, pickup_y, dropoff_z, speed=0.06):  # Faster: 0.08 → 0.06
+        if not self.move_to_xyz(pickup_x, pickup_y, dropoff_z, speed=0.06):
             return False
         
         self.get_logger().info(f'6. Move to dropoff X,Y (Z constant at clearance)')
-        if not self.move_to_xyz(dropoff_x, dropoff_y, dropoff_z, speed=0.06):  # Faster: 0.08 → 0.06
+        if not self.move_to_xyz(dropoff_x, dropoff_y, dropoff_z, speed=0.06):
             return False
         
         # === PLACEMENT SEQUENCE ===
         self.get_logger().info(f'7. Lower 50mm')
-        if not self.move_to_xyz(dropoff_x, dropoff_y, dropoff_z - 0.050, speed=0.06):  # Faster: 0.08 → 0.06
+        if not self.move_to_xyz(dropoff_x, dropoff_y, dropoff_z - 0.050, speed=0.06):
             return False
         
         self.get_logger().info(f'8. OPEN GRIPPER')
@@ -391,18 +403,17 @@ class HanoiSolver(Node):
             return False
         
         self.get_logger().info(f'9. Back away 40mm in Y direction (clear tower)')
-        if not self.move_to_xyz(dropoff_x, dropoff_y - 0.040, dropoff_z - 0.050, speed=0.06):  # Faster: 0.08 → 0.06
+        if not self.move_to_xyz(dropoff_x, dropoff_y - 0.040, dropoff_z - 0.050, speed=0.06):
             return False
         
-        
-        self.get_logger().info(f'10. Retreat to T{to_tower}F')
-        if not self.move_joints(to_front_joints, speed=0.25):  # Faster: 0.15 → 0.25
+        self.get_logger().info(f'10. Retreat to {retreat_label}')
+        if not self.move_joints(retreat_joints, speed=0.25):
             return False
-        time.sleep(0.1)  # Reduced: 0.2 → 0.1
+        time.sleep(0.1)
         
         self.get_logger().info(f'✓ Move complete\n')
         return True
-    
+
     def solve(self):
         """Execute complete 3-disk Tower of Hanoi solution automatically"""
         
@@ -452,7 +463,12 @@ class HanoiSolver(Node):
             self.get_logger().info(f'# MOVE {i}/7: {description}')
             self.get_logger().info(f'{"#"*60}\n')
             
-            if not self.move_disk(disk, from_t, from_l, to_t):
+            # Look ahead to next move to determine smart retreat location
+            next_from_tower = None
+            if i < len(moves):  # If there's a next move
+                next_from_tower = moves[i][1]  # Get from_tower of next move
+            
+            if not self.move_disk(disk, from_t, from_l, to_t, next_from_tower):
                 self.get_logger().error(f'❌ Move {i} failed!')
                 return False
         
@@ -467,7 +483,6 @@ class HanoiSolver(Node):
         self.get_logger().info('='*60)
         
         return True
-
 
 def main():
     rclpy.init()
