@@ -325,7 +325,7 @@ class HanoiSolver(Node):
         req.state = 1.0
         future = self.io_client.call_async(req)
         rclpy.spin_until_future_complete(self, future, timeout_sec=2.0)
-        time.sleep(0.25)
+        time.sleep(0.125)
         
         self.gripper_open = open_it
         self.get_logger().info(f'✓ Gripper {"OPENED" if open_it else "CLOSED"}')
@@ -409,7 +409,7 @@ class HanoiSolver(Node):
         self.get_logger().info(f'10. Retreat to {retreat_label}')
         if not self.move_joints(retreat_joints, speed=0.40):
             return False
-        time.sleep(0.1)
+        time.sleep(0.05)
         
         self.get_logger().info(f'✓ Move complete\n')
         return True
@@ -436,7 +436,7 @@ class HanoiSolver(Node):
             self.get_logger().info('Moving to HOME')
             if not self.move_joints(self.home):
                 return False
-            time.sleep(1.0)
+            time.sleep(0.5)
         else:
             self.get_logger().info('✓ At HOME')
         
