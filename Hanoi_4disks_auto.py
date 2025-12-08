@@ -3,7 +3,7 @@
 Tower of Hanoi Solver - 4 Disks - ULTRA-OPTIMIZED MODE
 10-step sequence (removed redundant lift-to-clearance)
 Direct retreat to next tower position (saves extra joint motion)
-Maximum speeds: 25% joint, 6% Cartesian (0.06s/waypoint)
+Maximum speeds: 100% joint, 6% Cartesian (0.06s/waypoint)
 15 moves total (2^4 - 1)
 """
 
@@ -79,14 +79,14 @@ class HanoiSolver(Node):
         self.home = [0.451393, -2.229160, 1.860002, 0.342343, 1.273064, -2.157974]
         self.home_tcp = (0.11013, 0.20151, 0.47436)
         
-        self.t1f = [1.104142, -1.717815, 1.571371, 0.118974, 1.925808, -2.175808]
-        self.t1f_tcp = (0.11052, 0.39843, 0.47430)
+        self.t1f = [1.024095, -1.560400, 1.718295, -0.189088, 1.847764, -2.165603]
+        self.t1f_tcp = (0.17229, 0.44985, 0.36034)
         
-        self.t2f = [0.727783, -1.887111, 1.697958, 0.163430, 1.549586, -2.165568]
-        self.t2f_tcp = (0.17842, 0.30746, 0.47434)
+        self.t2f = [0.691657, -1.760931, 1.899039, -0.167903, 1.515223, -2.155339]
+        self.t2f_tcp = (0.23029, 0.33834, 0.36034)
         
-        self.t3f = [0.234420, -1.856273, 1.602573, 0.224239, 1.056470, -2.151578]
-        self.t3f_tcp = (0.29051, 0.22322, 0.50290)
+        self.t3f = [0.296277, -1.753591, 1.893261, -0.172260, 1.120068, -2.142656]
+        self.t3f_tcp = (0.32906, 0.25205, 0.36027)
         
         # ========== D1 POSITIONS ==========
         self.d1_pickup_t1_p1 = [1.003397, -1.485043, 1.689462, -0.235874, 1.831769, -2.178946]
@@ -111,8 +111,8 @@ class HanoiSolver(Node):
         self.d2_pickup_t1_p1 = [0.992305, -1.488281, 1.690050, -0.234090, 1.786828, -2.090832]
         self.d2_pickup_t1_p1_tcp = (0.19825, 0.47096, 0.34211)
         
-        self.d2_pickup_t1_p2 = [1.006356, -1.488713, 1.584072, -0.129076, 1.829070, -2.125517]
-        self.d2_pickup_t1_p2_tcp = (0.19733, 0.47637, 0.38345)
+        self.d2_pickup_t1_p2 = [0.999396, -1.496841, 1.581831, -0.104133, 1.812547, -2.179054]
+        self.d2_pickup_t1_p2_tcp = (0.19726, 0.47227, 0.38662)
         
         self.d2_pickup_t2_p1 = [0.692771, -1.589694, 1.807518, -0.249255, 1.487251, -2.081322]
         self.d2_pickup_t2_p1_tcp = (0.27981, 0.38300, 0.33728)
@@ -145,8 +145,8 @@ class HanoiSolver(Node):
         self.d3_pickup_t1_p3 = [0.990328, -1.499407, 1.497754, -0.030691, 1.784921, -2.090365]
         self.d3_pickup_t1_p3_tcp = (0.20087, 0.47338, 0.42173)
         
-        self.d3_pickup_t2_p1 = [0.688122, -1.565040, 1.779582, -0.246932, 1.510885, -2.115109]
-        self.d3_pickup_t2_p1_tcp = (0.29129, 0.38717, 0.33869)
+        self.d3_pickup_t2_p1 = [0.676068, -1.582259, 1.798230, -0.247483, 1.470677, -2.080844]
+        self.d3_pickup_t2_p1_tcp = (0.29123, 0.38374, 0.34259)
         
         self.d3_pickup_t2_p2 = [0.683377, -1.599695, 1.708564, -0.140410, 1.478023, -2.080891]
         self.d3_pickup_t2_p2_tcp = (0.28497, 0.38259, 0.37936)
@@ -237,7 +237,7 @@ class HanoiSolver(Node):
         
         return all(abs(c - t) < tolerance for c, t in zip(current, target_joints))
     
-    def move_joints(self, joints, speed=0.08):
+    def move_joints(self, joints, speed=1.00):
         """Move to joint position"""
         
         joint_names = ['shoulder_pan_joint', 'shoulder_lift_joint', 'elbow_joint',
@@ -289,7 +289,7 @@ class HanoiSolver(Node):
         except:
             return None
     
-    def move_to_xyz(self, x, y, z, speed=0.15):
+    def move_to_xyz(self, x, y, z, speed=0.06):
         """Move to X,Y,Z keeping orientation constant"""
         
         # Get current orientation
@@ -373,7 +373,7 @@ class HanoiSolver(Node):
             req.state = 0.0
             future = self.io_client.call_async(req)
             rclpy.spin_until_future_complete(self, future, timeout_sec=2.0)
-            time.sleep(0.15)
+            time.sleep(0.05)
         
         # Activate
         req = ur_msgs.srv.SetIO.Request()
@@ -382,21 +382,17 @@ class HanoiSolver(Node):
         req.state = 1.0
         future = self.io_client.call_async(req)
         rclpy.spin_until_future_complete(self, future, timeout_sec=2.0)
-        time.sleep(1.5)
+        time.sleep(0.125)
         
         self.gripper_open = open_it
         self.get_logger().info(f'✓ Gripper {"OPENED" if open_it else "CLOSED"}')
         return True
     
-    def move_disk(self, disk, from_tower, from_level, to_tower, next_tower=None):
+    def move_disk(self, disk, from_tower, from_level, to_tower, next_from_tower=None):
         """Move one disk using Cartesian linear motion
         
         Args:
-            disk: Disk identifier (d1, d2, d3)
-            from_tower: Source tower (1, 2, 3)
-            from_level: Level on source tower (p1, p2, p3)
-            to_tower: Destination tower (1, 2, 3)
-            next_tower: Tower for next move (1, 2, 3) - optimizes retreat position
+            next_from_tower: Tower number where next pickup occurs (for smart retreat)
         """
         
         self.get_logger().info(f'\n{"="*60}')
@@ -408,6 +404,14 @@ class HanoiSolver(Node):
         to_front_joints = getattr(self, f't{to_tower}f')
         pickup_joints = getattr(self, f'{disk}_pickup_t{from_tower}_{from_level}')
         dropoff_joints = getattr(self, f'{disk}_dropoff_t{to_tower}')
+        
+        # Determine retreat target (next pickup tower or current dropoff tower)
+        if next_from_tower is not None:
+            retreat_joints = getattr(self, f't{next_from_tower}f')
+            retreat_label = f'T{next_from_tower}F (next pickup)'
+        else:
+            retreat_joints = to_front_joints
+            retreat_label = f'T{to_tower}F'
         
         # Get TCP positions
         from_front_tcp = getattr(self, f't{from_tower}f_tcp')
@@ -421,9 +425,9 @@ class HanoiSolver(Node):
         
         # === PICKUP SEQUENCE ===
         self.get_logger().info(f'1. Moving to T{from_tower}F')
-        if not self.move_joints(from_front_joints, speed=0.25):
+        if not self.move_joints(from_front_joints, speed=1.0):
             return False
-        time.sleep(0.1)
+        time.sleep(0.05)
         
         self.get_logger().info(f'2. Match Z height: {front_z:.4f}m → {pickup_z:.4f}m')
         if not self.move_to_xyz(front_x, front_y, pickup_z, speed=0.06):
@@ -459,19 +463,10 @@ class HanoiSolver(Node):
         if not self.move_to_xyz(dropoff_x, dropoff_y - 0.040, dropoff_z - 0.050, speed=0.06):
             return False
         
-        # === OPTIMIZED RETREAT ===
-        # Go directly to next tower front (or current tower if last move)
-        retreat_tower = next_tower if next_tower is not None else to_tower
-        retreat_joints = getattr(self, f't{retreat_tower}f')
-        
-        if next_tower is not None and next_tower != to_tower:
-            self.get_logger().info(f'10. Direct retreat to T{retreat_tower}F (next move) ⚡')
-        else:
-            self.get_logger().info(f'10. Retreat to T{retreat_tower}F')
-        
-        if not self.move_joints(retreat_joints, speed=0.25): #changed from 0.25 to 0.05 for slower speed
+        self.get_logger().info(f'10. Retreat to {retreat_label}')
+        if not self.move_joints(retreat_joints, speed=1.00):
             return False
-        time.sleep(0.1)
+        time.sleep(0.05)
         
         self.get_logger().info(f'✓ Move complete\n')
         return True
@@ -484,7 +479,7 @@ class HanoiSolver(Node):
         self.get_logger().info('='*60)
         self.get_logger().info('Start: T1=[D1,D2,D3,D4]  Goal: T2=[D1,D2,D3,D4]')
         self.get_logger().info('Mode: AUTOMATIC (no manual pauses)')
-        self.get_logger().info('Speed: MAXIMUM (25% joint, 6% Cartesian)')
+        self.get_logger().info('Speed: MAXIMUM (100% joint, 6% Cartesian)')
         self.get_logger().info('Steps: 10 per move (removed redundant lift)')
         self.get_logger().info('Retreat: Direct to next tower (saves extra motion)')
         self.get_logger().info('Moves: 15 (2^4 - 1)')
