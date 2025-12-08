@@ -69,14 +69,14 @@ class HanoiSolver(Node):
         self.home = [0.451393, -2.229160, 1.860002, 0.342343, 1.273064, -2.157974]
         self.home_tcp = (0.11013, 0.20151, 0.47436)
         
-        self.t1f = [1.104142, -1.717815, 1.571371, 0.118974, 1.925808, -2.175808]
-        self.t1f_tcp = (0.11052, 0.39843, 0.47430)
+        self.t1f = [1.024095, -1.560400, 1.718295, -0.189088, 1.847764, -2.165603]
+        self.t1f_tcp = (0.17229, 0.44985, 0.36034)
         
-        self.t2f = [0.727783, -1.887111, 1.697958, 0.163430, 1.549586, -2.165568]
-        self.t2f_tcp = (0.17842, 0.30746, 0.47434)
+        self.t2f = [0.691657, -1.760931, 1.899039, -0.167903, 1.515223, -2.155339]
+        self.t2f_tcp = (0.23029, 0.33834, 0.36034)
         
-        self.t3f = [0.234420, -1.856273, 1.602573, 0.224239, 1.056470, -2.151578]
-        self.t3f_tcp = (0.29051, 0.22322, 0.50290)
+        self.t3f = [0.296277, -1.753591, 1.893261, -0.172260, 1.120068, -2.142656]
+        self.t3f_tcp = (0.32906, 0.25205, 0.36027)
         
         # ========== D1 POSITIONS ==========
         self.d1_pickup_t1_p1 = [1.003397, -1.485043, 1.689462, -0.235874, 1.831769, -2.178946]
@@ -180,7 +180,7 @@ class HanoiSolver(Node):
         
         return all(abs(c - t) < tolerance for c, t in zip(current, target_joints))
     
-    def move_joints(self, joints, speed=0.08):
+    def move_joints(self, joints, speed=1.00):
         """Move to joint position"""
         
         joint_names = ['shoulder_pan_joint', 'shoulder_lift_joint', 'elbow_joint',
@@ -232,7 +232,7 @@ class HanoiSolver(Node):
         except:
             return None
     
-    def move_to_xyz(self, x, y, z, speed=0.15):
+    def move_to_xyz(self, x, y, z, speed=0.06):
         """Move to X,Y,Z keeping orientation constant"""
         
         # Get current orientation
@@ -316,7 +316,7 @@ class HanoiSolver(Node):
             req.state = 0.0
             future = self.io_client.call_async(req)
             rclpy.spin_until_future_complete(self, future, timeout_sec=2.0)
-            time.sleep(0.10)
+            time.sleep(0.05)
         
         # Activate
         req = ur_msgs.srv.SetIO.Request()
@@ -368,9 +368,9 @@ class HanoiSolver(Node):
         
         # === PICKUP SEQUENCE ===
         self.get_logger().info(f'1. Moving to T{from_tower}F')
-        if not self.move_joints(from_front_joints, speed=0.25):
+        if not self.move_joints(from_front_joints, speed=1.0):
             return False
-        time.sleep(0.1)
+        time.sleep(0.05)
         
         self.get_logger().info(f'2. Match Z height: {front_z:.4f}m → {pickup_z:.4f}m')
         if not self.move_to_xyz(front_x, front_y, pickup_z, speed=0.06):
@@ -407,7 +407,7 @@ class HanoiSolver(Node):
             return False
         
         self.get_logger().info(f'10. Retreat to {retreat_label}')
-        if not self.move_joints(retreat_joints, speed=0.25):
+        if not self.move_joints(retreat_joints, speed=0.40):
             return False
         time.sleep(0.1)
         
