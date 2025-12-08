@@ -101,8 +101,8 @@ class HanoiSolver(Node):
         self.d2_pickup_t1_p1 = [0.992305, -1.488281, 1.690050, -0.234090, 1.786828, -2.090832]
         self.d2_pickup_t1_p1_tcp = (0.19825, 0.47096, 0.34211)
         
-        self.d2_pickup_t1_p2 = [0.987657, -1.512476, 1.615790, -0.135683, 1.782139, -2.090461]
-        self.d2_pickup_t1_p2_tcp = (0.19777, 0.46664, 0.38101)
+        self.d2_pickup_t1_p2 = [0.999396, -1.496841, 1.581831, -0.104133, 1.812547, -2.179054]
+        self.d2_pickup_t1_p2_tcp = (0.19726, 0.47227, 0.38662)
         
         self.d2_pickup_t2_p1 = [0.692771, -1.589694, 1.807518, -0.249255, 1.487251, -2.081322]
         self.d2_pickup_t2_p1_tcp = (0.27981, 0.38300, 0.33728)
@@ -316,7 +316,7 @@ class HanoiSolver(Node):
             req.state = 0.0
             future = self.io_client.call_async(req)
             rclpy.spin_until_future_complete(self, future, timeout_sec=2.0)
-            time.sleep(0.15)
+            time.sleep(0.10)
         
         # Activate
         req = ur_msgs.srv.SetIO.Request()
@@ -325,7 +325,7 @@ class HanoiSolver(Node):
         req.state = 1.0
         future = self.io_client.call_async(req)
         rclpy.spin_until_future_complete(self, future, timeout_sec=2.0)
-        time.sleep(1.5)
+        time.sleep(0.25)
         
         self.gripper_open = open_it
         self.get_logger().info(f'✓ Gripper {"OPENED" if open_it else "CLOSED"}')
